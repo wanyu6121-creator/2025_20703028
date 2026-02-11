@@ -1,0 +1,27 @@
+name: doxygen-deploy
+
+on:
+  push:
+    branches:
+      - [cite_start]master  # 如果你的默认分支是 main，请将其更改为 main 
+
+jobs:
+  deploy-worksheet5:
+    [cite_start]runs-on: ubuntu-latest  # 定义虚拟机的操作系统 [cite: 137]
+
+    steps:
+      - name: Checkout
+        [cite_start]uses: actions/checkout@v2  # 检出代码到虚拟机 [cite: 145, 148]
+
+      - name: Install doxygen
+        [cite_start]run: sudo apt-get install -y doxygen  # 在虚拟机上安装 Doxygen [cite: 151, 153]
+
+      - name: Run Doxygen
+        [cite_start]working-directory: ${{github.workspace}}/Worksheet5  # 指定工作目录 [cite: 160]
+        [cite_start]run: doxygen  # 运行 Doxygen 生成文档 [cite: 160]
+
+      - name: Deploy
+        [cite_start]uses: JamesIves/github-pages-deploy-action@v4.2.5  # 使用部署操作 [cite: 163]
+        with:
+          [cite_start]branch: gh-pages  # 部署到 gh-pages 分支 [cite: 168]
+          [cite_start]folder: ${{github.workspace}}/Worksheet5/html  # 部署生成的 html 文件夹 [cite: 171]
