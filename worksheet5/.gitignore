@@ -1,0 +1,6 @@
+*.exe 
+*.obj 
+*.dll 
+build/ 
+html/
+latex/
