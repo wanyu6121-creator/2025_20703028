@@ -106,6 +106,7 @@ void MainWindow::on_actionOpen_File_triggered() {
 
             // 将它添加到选中的节点下
             selectedPart->appendChild(newItem);
+            ui->treeView->model()->layoutChanged();
 
             // 2. 调用新创建项目的 loadSTL() 函数来读取 STL 文件
             newItem->loadSTL(fileName);
