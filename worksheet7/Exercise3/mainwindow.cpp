@@ -99,7 +99,12 @@ void MainWindow::on_actionOpen_File_triggered() {
 
             // 1. 创建一个新节点作为子节点 (这里假设你的 ModelPart 构造函数接受 QList<QVariant> 且有 appendChild 方法)
             // 注意：如果你在 Worksheet 6 中的 TreeModel 实现了专门的 insertRow 方法，请使用你自己的插入逻辑。
-            ModelPart* newItem = new ModelPart({onlyFileName});
+            // 将原来的 ModelPart* newItem = new ModelPart({onlyFileName}); 修改为：
+            // 1. 创建一个新节点 (此时数组里只需要传名字)
+            // 确保是用这行代码创建新节点，不要只传 {onlyFileName}
+            ModelPart* newItem = new ModelPart({onlyFileName, "true"}); // 数组里只传 UI 需要显示的文
+
+            // 将它添加到选中的节点下
             selectedPart->appendChild(newItem);
 
             // 2. 调用新创建项目的 loadSTL() 函数来读取 STL 文件
@@ -128,26 +133,29 @@ void MainWindow::handleOptionsButton() {
     }
 
     ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
-
     OptionDialog dialog(this);
 
+    // 1. 使用我们刚刚写好的专用函数来读取颜色和状态
     dialog.setInitialData(
-        selectedPart->data(0).toString(),
-        selectedPart->data(1).toBool(),
-        selectedPart->data(2).toInt(),    // 红色
-        selectedPart->data(3).toInt(),    // 绿色
-        selectedPart->data(4).toInt()     // 蓝色
+        selectedPart->data(0).toString(), // 只有名字保留在原生数据列里
+        selectedPart->visible(),
+        selectedPart->getColourR(),
+        selectedPart->getColourG(),
+        selectedPart->getColourB()
         );
 
     if (dialog.exec() == QDialog::Accepted) {
+
         QString newName = dialog.getName();
         bool newVisible = dialog.getIsVisible();
-
-        selectedPart->set(0, newName);
-        selectedPart->set(1, newVisible);
-        selectedPart->set(2, dialog.getR());
-        selectedPart->set(3, dialog.getG());
-        selectedPart->set(4, dialog.getB());
+        int r = dialog.getR();
+        int g = dialog.getG();
+        int b = dialog.getB();
+        selectedPart->set(0, newName); // 名字还是用原生的存
+        selectedPart->setVisible(newVisible); // 内部会自动更新 actor 并同步给 TreeView
+        selectedPart->setColour(r, g, b);     // 内部会自动更新 a
+        // 4. 刷新 3D 画面
+        renderWindow->Render();
 
         emit statusUpdateMessage(QString("Dialog accepted: Item updated"), 0);
     } else {

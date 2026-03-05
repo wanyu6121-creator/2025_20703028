@@ -16,13 +16,19 @@
 #include <vtkSmartPointer.h>
 #include <vtkDataSetMapper.h>
 #include <vtkPolyDataMapper.h>
-
-
+#include <vtkProperty.h>
 
 ModelPart::ModelPart(const QList<QVariant>& data, ModelPart* parent )
     : m_itemData(data), m_parentItem(parent) {
 
-    /* You probably want to give the item a default colour */
+    // 从传入的 data 中提取初始可见性
+    if (m_itemData.size() > 1) {
+        isVisible = (m_itemData.at(1).toString() == "true");
+    } else {
+        isVisible = true;
+    }
+
+    colour[0] = 255; colour[1] = 255; colour[2] = 255;
 }
 
 
@@ -97,59 +103,57 @@ int ModelPart::row() const {
 }
 
 void ModelPart::setColour(const unsigned char R, const unsigned char G, const unsigned char B) {
-    /* This is a placeholder function that you will need to modify if you want to use it */
-    
-    /* As the name suggests ... */
+    colour[0] = R;
+    colour[1] = G;
+    colour[2] = B;
+
+    // 【新增】：同步到原生的数据列表中，确保对话框能读到
+    // 如果列表不够长，就扩充它
+    while (m_itemData.size() < 5) m_itemData.append(QVariant());
+    m_itemData.replace(2, R);
+    m_itemData.replace(3, G);
+    m_itemData.replace(4, B);
+
+    if (actor != nullptr) {
+        actor->GetProperty()->SetColor(R / 255.0, G / 255.0, B / 255.0);
+    }
 }
 
-unsigned char ModelPart::getColourR() {
-    /* This is a placeholder function that you will need to modify if you want to use it */
-    
-    /* As the name suggests ... */
-    return 0;   // needs updating
-}
-
-unsigned char ModelPart::getColourG() {
-    /* This is a placeholder function that you will need to modify if you want to use it */
-    
-    /* As the name suggests ... */
-    return 0;   // needs updating
-}
+unsigned char ModelPart::getColourR() { return colour[0]; }
+unsigned char ModelPart::getColourG() { return colour[1]; }
+unsigned char ModelPart::getColourB() { return colour[2]; }
 
 
-unsigned char ModelPart::getColourB() {
-   /* This is a placeholder function that you will need to modify if you want to use it */
-    
-    /* As the name suggests ... */
-    return 0;   // needs updating
-}
+void ModelPart::setVisible(bool isVis) {
+    isVisible = isVis;
 
+    // 【新增】：同步到原生的数据列表中
+    if (m_itemData.size() > 1) {
+        m_itemData.replace(1, isVisible ? "true" : "false");
+    }
 
-void ModelPart::setVisible(bool isVisible) {
-    /* This is a placeholder function that you will need to modify if you want to use it */
-    
-    /* As the name suggests ... */
+    if (actor != nullptr) {
+        actor->SetVisibility(isVisible ? 1 : 0);
+    }
 }
 
 bool ModelPart::visible() {
-    /* This is a placeholder function that you will need to modify if you want to use it */
-    
-    /* As the name suggests ... */
-    return false;
+    return isVisible;
 }
 
 void ModelPart::loadSTL(QString fileName) {
-    // 1. 创建 vtkSTLReader 并接收文件名
     file = vtkSmartPointer<vtkSTLReader>::New();
     file->SetFileName(fileName.toStdString().c_str());
 
-    // 2. 创建 mapper 并将其连接到 STL reader
     mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
     mapper->SetInputConnection(file->GetOutputPort());
 
-    // 3. 创建 actor 并将其连接到 mapper
     actor = vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
+
+    // 【新增】：模型刚加载出来时，立刻赋予它当前保存的颜色和可见性
+    actor->GetProperty()->SetColor(colour[0] / 255.0, colour[1] / 255.0, colour[2] / 255.0);
+    actor->SetVisibility(isVisible ? 1 : 0);
 }
 
 vtkSmartPointer<vtkActor> ModelPart::getActor() {
